@@ -13,6 +13,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.TimeZone;
 import java.util.Map.Entry;
+import java.util.function.Consumer;
 
 import com.clickhouse.client.config.ClickHouseClientOption;
 import com.clickhouse.client.config.ClickHouseDefaults;
@@ -252,6 +253,7 @@ public class ClickHouseConfig implements ClickHouseDataConfig {
 
     // node selector - pick only interested nodes from given list
     private final ClickHouseNodeSelector nodeSelector;
+    protected transient Consumer<ClickHouseResponseSummary.Progress> progressListener = progress -> {};
 
     /**
      * Construct a new configuration by consolidating given ones.
@@ -800,6 +802,14 @@ public class ClickHouseConfig implements ClickHouseDataConfig {
 
     public Map<ClickHouseOption, Serializable> getAllOptions() {
         return Collections.unmodifiableMap(this.options);
+    }
+
+    public Consumer<ClickHouseResponseSummary.Progress> getProgressListener() {
+        return progressListener;
+    }
+
+    public void setProgressListener(Consumer<ClickHouseResponseSummary.Progress> progressListener) {
+        this.progressListener = progressListener;
     }
 
     /**

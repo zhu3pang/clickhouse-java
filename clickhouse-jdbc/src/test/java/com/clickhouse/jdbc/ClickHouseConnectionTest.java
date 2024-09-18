@@ -11,9 +11,11 @@ import java.util.UUID;
 
 import com.clickhouse.client.ClickHouseProtocol;
 import com.clickhouse.client.ClickHouseRequest;
+import com.clickhouse.client.ClickHouseResponse;
 import com.clickhouse.client.config.ClickHouseClientOption;
 import com.clickhouse.data.ClickHouseCompression;
 import com.clickhouse.data.ClickHouseUtils;
+import com.clickhouse.data.format.JsonStreamUtils;
 import com.clickhouse.data.value.UnsignedByte;
 
 import org.testng.Assert;
@@ -27,7 +29,7 @@ public class ClickHouseConnectionTest extends JdbcIntegrationTest {
     }
 
     @Test(groups = "integration")
-    public void testCentralizedConfiguration() throws SQLException {
+    public void testCentralizedConfiguration() throws Exception {
         if (isCloud()) return; //TODO: testCentralizedConfiguration - Revisit, see: https://github.com/ClickHouse/clickhouse-java/issues/1747
 
         Properties props = new Properties();
@@ -40,6 +42,15 @@ public class ClickHouseConnectionTest extends JdbcIntegrationTest {
             if (stmt.unwrap(ClickHouseRequest.class).getServer().getProtocol() == ClickHouseProtocol.GRPC) {
                 throw new SkipException("Skip the test as transaction is supported since 22.7");
             }
+            ClickHouseRequest request = stmt.unwrap(ClickHouseRequest.class);
+            request.set("send_progress", true);
+            request.set("send_progress_interval_ms", 1000);
+            request.setProgressListener(progress -> {
+                System.out.println(JsonStreamUtils.toJsonString(progress));
+            });
+            stmt.execute("select * from numbers(100000)");
+            ClickHouseResponse res = request.executeAndWait();
+            System.out.println(JsonStreamUtils.toJsonString(res));
 
             Assert.assertEquals(conn.getConfig().getResponseCompressAlgorithm(), ClickHouseCompression.LZ4);
             Assert.assertTrue(conn.getJdbcConfig().isAutoCommit());

@@ -54,11 +54,11 @@ public enum ClickHouseHttpOption implements ClickHouseOption {
     SEND_HTTP_CLIENT_ID("send_http_client_id", "", "Indicates whether http client would send its identification through Referer header to server. " +
             "Valid values: empty string - nothing is sent. IP_ADDRESS - client's IP address is used. HOST_NAME - host name is used."),
 
-    // SEND_PROGRESS("send_progress_in_http_headers", false,
-    // "Enables or disables X-ClickHouse-Progress HTTP response headers in
-    // clickhouse-server responses."),
-    // SEND_PROGRESS_INTERVAL("http_headers_progress_interval_ms", 3000, ""),
-     WAIT_END_OF_QUERY("wait_end_of_query", false, ""),
+    SEND_PROGRESS("send_progress_in_http_headers", false,
+            "Enables or disables X-ClickHouse-Progress HTTP response headers in clickhouse-server responses."),
+    SEND_PROGRESS_INTERVAL("http_headers_progress_interval_ms", 3000, ""),
+
+    WAIT_END_OF_QUERY("wait_end_of_query", false, ""),
 
     /**
      * Whether to remember last set role and send them in every next requests as query parameters.

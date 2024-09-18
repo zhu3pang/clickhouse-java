@@ -23,6 +23,7 @@ import java.util.Optional;
 import java.util.Properties;
 import java.util.Set;
 import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 import java.util.function.Function;
 
 import com.clickhouse.client.config.ClickHouseClientOption;
@@ -383,6 +384,7 @@ public class ClickHouseRequest<SelfT extends ClickHouseRequest<SelfT>> implement
 
     protected transient ClickHouseConfigChangeListener<ClickHouseRequest<?>> changeListener;
     protected transient BiConsumer<ClickHouseNode, ClickHouseNode> serverListener;
+    protected transient Consumer<ClickHouseResponseSummary.Progress> progressListener;
 
     // cache
     protected transient ClickHouseConfig config;
@@ -1835,6 +1837,20 @@ public class ClickHouseRequest<SelfT extends ClickHouseRequest<SelfT>> implement
     @SuppressWarnings("unchecked")
     public final SelfT setServerListener(BiConsumer<ClickHouseNode, ClickHouseNode> listener) {
         this.serverListener = listener;
+        return (SelfT) this;
+    }
+
+    /**
+     * Sets thread-safe progress listener. Please keep in mind that the same listener
+     * might be shared by multiple requests.
+     *
+     * @param progressListener thread-safe progress listener which may or may not be null
+     * @return the request itself
+     */
+    @SuppressWarnings("unchecked")
+    public final SelfT setProgressListener(Consumer<ClickHouseResponseSummary.Progress> progressListener) {
+        this.progressListener = progressListener;
+        getConfig().setProgressListener(progressListener);
         return (SelfT) this;
     }
 

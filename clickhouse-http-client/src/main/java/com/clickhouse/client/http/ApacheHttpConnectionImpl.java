@@ -1,12 +1,6 @@
 package com.clickhouse.client.http;
 
-import com.clickhouse.client.AbstractSocketClient;
-import com.clickhouse.client.ClickHouseClient;
-import com.clickhouse.client.ClickHouseConfig;
-import com.clickhouse.client.ClickHouseNode;
-import com.clickhouse.client.ClickHouseRequest;
-import com.clickhouse.client.ClickHouseSocketFactory;
-import com.clickhouse.client.ClickHouseSslContextProvider;
+import com.clickhouse.client.*;
 import com.clickhouse.client.config.ClickHouseClientOption;
 import com.clickhouse.client.config.ClickHouseProxyType;
 import com.clickhouse.client.config.ClickHouseSslMode;
@@ -17,6 +11,7 @@ import com.clickhouse.data.ClickHouseFormat;
 import com.clickhouse.data.ClickHouseInputStream;
 import com.clickhouse.data.ClickHouseOutputStream;
 import com.clickhouse.data.ClickHouseUtils;
+import com.clickhouse.data.format.JsonStreamUtils;
 import com.clickhouse.logging.Logger;
 import com.clickhouse.logging.LoggerFactory;
 import org.apache.hc.client5.http.classic.methods.HttpGet;
@@ -30,11 +25,7 @@ import org.apache.hc.client5.http.socket.ConnectionSocketFactory;
 import org.apache.hc.client5.http.socket.PlainConnectionSocketFactory;
 import org.apache.hc.client5.http.ssl.DefaultHostnameVerifier;
 import org.apache.hc.client5.http.ssl.SSLConnectionSocketFactory;
-import org.apache.hc.core5.http.ConnectionClosedException;
-import org.apache.hc.core5.http.Header;
-import org.apache.hc.core5.http.HttpHost;
-import org.apache.hc.core5.http.HttpRequest;
-import org.apache.hc.core5.http.NoHttpResponseException;
+import org.apache.hc.core5.http.*;
 import org.apache.hc.core5.http.config.Registry;
 import org.apache.hc.core5.http.config.RegistryBuilder;
 import org.apache.hc.core5.http.io.SocketConfig;
@@ -121,6 +112,16 @@ public class ApacheHttpConnectionImpl extends ClickHouseHttpConnection {
         }
         if (c.getProxyType() == ClickHouseProxyType.HTTP) {
             builder.setProxy(new HttpHost(c.getProxyHost(), c.getProxyPort()));
+        }
+        boolean sendProgress = c.getBoolOption(ClickHouseHttpOption.SEND_PROGRESS);
+        if (sendProgress) {
+            builder.addResponseInterceptorLast((httpResponse, entityDetails, httpContext) -> {
+                Header header = httpResponse.getHeader("X-ClickHouse-Progress");
+                if (header != null) {
+                    log.debug("Progress: %s", header.getValue());
+                    c.getProgressListener().accept(JsonStreamUtils.readObject(header.getValue(), ClickHouseResponseSummary.Progress.class));
+                }
+            });
         }
         return builder.build();
     }

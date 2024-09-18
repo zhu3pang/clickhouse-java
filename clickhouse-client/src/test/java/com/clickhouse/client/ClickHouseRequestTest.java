@@ -23,6 +23,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
+import com.clickhouse.data.format.JsonStreamUtils;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 import com.clickhouse.client.ClickHouseRequest.Mutation;
@@ -316,6 +317,21 @@ public class ClickHouseRequestTest {
         request.clearSettings();
         Assert.assertTrue(request.getSettings().isEmpty());
         Assert.assertEquals(request.getSetting("b", 9), 9);
+    }
+
+    @Test(groups = { "unit" })
+    public void testProgress() throws Exception{
+        ClickHouseClient client = ClickHouseClient.builder().build();
+
+        ClickHouseRequest<?> request = client
+                .read("http://localhost?query=SELECT+*+FROM+numbers(10000000)+limit+10");
+        request.set("send_progress", true);
+        request.set("send_progress_interval_ms", 1000);
+        request.setProgressListener(progress -> {
+            System.out.println(JsonStreamUtils.toJsonString(progress));
+        });
+        ClickHouseResponse clickHouseResponse = request.executeAndWait();
+        System.out.println(clickHouseResponse);
     }
 
     @Test(groups = { "unit" })
